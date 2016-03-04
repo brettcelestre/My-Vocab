@@ -75,7 +75,6 @@ $(document).ready(function(){
 
     // Add View button 
     $('.posts').on('click', '.addView', function() {
-
         // This needs to be more secure, if you click really fast it just keeps increasing
         // the view count. Maybe implement a state class/check or something
 
