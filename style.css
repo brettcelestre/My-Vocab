@@ -9,10 +9,12 @@ body {
   z-index: 10;
   position: relative;
   float: left; 
+  margin-left: 5px;
+  margin-top: -15px;
 }
 
 #stats {
-  margin-top: 55px;
+  margin-top: -20px;
 }
 
 .closeFont {

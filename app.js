@@ -1,10 +1,6 @@
 $(document).ready(function(){
-    var allWords = [],      // Complete List of Words
-        newWords = [],      // newWords Holding Array
-        synTotal = 0,       // synTotal Counter
-        tagTotal = 0,       // tagTotal Counter
-        exampleTotal = 0;   // exampleTotal Counter
-
+    var allWords = [], // Complete List of Words
+        newWords = []; // newWords Holding Array
 
     // If no allWords.length < 1 show newWordForm
     if(allWords.length < 1){
@@ -63,7 +59,8 @@ $(document).ready(function(){
 
     // Setting Counter Badges
     $('#word_count, #def_count, #syn_count, #ex_count, #tag_count').text(0);
-
+    
+    // Enables 'enter' hotkey for submit
     $('#word, #def, #example, #syntax, #tags').keypress(function(e) {
         if(e.which == 13) {
           $('#submit').click();
@@ -71,71 +68,147 @@ $(document).ready(function(){
         }
     });
 
-    function test(){
-        console.log('delete test');
-    }
-
     // Clear Forms Function
     function clear(){
         $('#word, #def, #example, #syntax, #tags').val('');
     }
 
+    // Add View button 
+    $('.posts').on('click', '.addView', function() {
+
+        // This needs to be more secure, if you click really fast it just keeps increasing
+        // the view count. Maybe implement a state class/check or something
+
+        // Checks if the toggle is closed or open
+        if ( $(this).hasClass('collapsed') ){
+            // Grabs the ID of this element, equals the word
+            var id = $(this).attr('id');
+            // Grabs the state of the toggle
+                state = false;
+            addView(id, state);
+        }
+    });
+
+    // Adds a view to word when toggling word
+    function addView( word, state ){
+        // Assigns thisWord to the word
+        var thisWord = word,
+        // Assigns thisState to the state
+            thisState = state;
+        // Finds the word inside of allWords array
+        _.each(allWords, function ( val ){
+            if( val.word === thisWord ){
+                // Increases the view count for that word
+                val.views++;
+                // Updates the text for views for that word
+                $('#' + thisWord + 'Views').text(val.views);
+            }
+        });
+    }
+
     // Creates a new word object
-    function newWord(word, def, example, syntax, tag, views){
+    function newWord(word, def, example, syntax, tag, views, date){
         this.word = word;
         this.def = def;
         this.example = example;
         this.syntax = syntax;
         this.tag = tag;
         this.views = views;
+        this.date = date;
     }
 
-    // -----vvv DELETE BUTTON vvv-------------------------------------------------------
-    // id="' + allWords[0].word + 'Delete"
-    /*
-    if ($(this.id) == for(var i = 0, x = allWords.length; i<x; i++){
-        (allWords[i].word + 'Delete')).click(function(){
-        console.log('delete test');
-    }
-    */
-
-    $('#gone').click(function(){
-        console.log('delete test');
-        //test();
-        /*
-        var deleteID = this.id;
-        console.log(deleteID + ' is to be deleted somehow');
-        for(var i = 0, x = allWords.length; i<x; i++){
-            console.log(' delete click for loop works!');
-            if(this.id == (allWords[i].word + 'Delete')){
-                console.log(' delete click if statement works!');
-            }
-        }
-        */
-    });
-
-    // Delete Button Function
-    function deleteWord(){
-        //$(this.id).remove();
-        console.log(this.id + ' has been deleted');
-    }
-    // -----^^^ DELETE BUTTON ^^^-------------------------------------------------------
-
+    // Developer view of the allWords array, currently hidden in html file
     function completeList(){
         $('#completeList').empty();
         for(var i = 0, x = allWords.length; i<x; i++){
-            $('#completeList').prepend('Array index ' + i + ' = ' + allWords[i].word + '<br>');
+            $('#completeList').prepend('allWords index ' + i + ' = ' + allWords[i].word + '<br>');
         }
     }
 
+    // Updates all of the counters
+    function counterUpdate(){
+        var syntaxTotal = 0,    // total syntax counter
+            tagTotal = 0,       // total tags counter
+            exampleTotal = 0;   // total example counter
+
+        // Loops through allWords and tallies up the counters
+        _.each(allWords,function( val ){
+            if( val.syntax ){ syntaxTotal++; }
+            if( val.example ){ exampleTotal++ }
+            if( val.tag ){ tagTotal++ }
+        });
+
+        // Adding Stats to DOM
+        $('#word_count').text(allWords.length); // If there is a word there is a def. There are absolutes.
+        $('#def_count').text(allWords.length);
+        $('#syn_count').text(syntaxTotal);
+        $('#ex_count').text(exampleTotal);
+        $('#tag_count').text(tagTotal);
+    }
+
+    // FILTER SECTION
+    // Turns the filter buttons blue
+    $('.filter').click(function(){
+        $('.filter').removeClass('btn-primary').addClass('btn-default');
+        $(this).removeClass('btn-default').addClass('btn-primary');
+    });
+
+    $('#filterAlphabet').click(function(){
+        var list = allWords;
+        filter( list, 'word' );
+    });
+
+    $('#filterViews').click(function(){
+        var list = allWords;
+        filter( list, 'views' );
+    });
+
+    $('#filterDate').click(function(){
+        var list = allWords;
+        filter( list, 'date' );
+    });
+
+    function filter( list, type ){ 
+        // Sorts words by type and stores in var sorted
+        var sorted = _.sortBy(list, type);
+        if ( type === 'views' ){
+            // If type = views then we don't need to reverse sorted
+            allWords = sorted;
+        } else {
+            // if type = date || word then we need to reverse the sorted array
+            allWords = sorted.reverse();
+        }
+        // Prints out the words off to the side
+        completeList();
+        // Builds the updated list on the DOM
+        createDOM();
+    } // END FILTER SECTION ^ 
+
+    // Delete Button 
+    $('.posts').on('click', '.deleteWord', function() {
+        console.log('delete ran');
+        // id of delete button equals index of word in the allWords array
+        var index = $(this).attr('id');
+        console.log('Deleting index ' + index + ' of allWords.');
+        console.log('allWords[' + index + '] = ', allWords[index]);
+        console.log('allWords before splice = ', allWords);
+        // Deletes that index from allWords array
+        allWords.splice(index, 1);
+        console.log('allWords after splice = ', allWords);
+        // Prints out the words off to the side
+        completeList();
+        // Builds the updated list on the DOM
+        createDOM();
+        //console.log('Delete Word button, index = ', index);
+    }); // End Delete Button
+
     // Submit Button Function
     $('#submit').click(function(){
-        // hides close / add word btn
         $('#close').hide();
         $('#addWordBtn').show();
 
-        // Clears forms and resets toggle
-        if ($('#syntax, #example, #tags').is(':visible')){
+        // Resets toggle for extra word options
+        if ( $('#syntax, #example, #tags').is(':visible') ){
             $('#syntax, #example, #tags').toggle(50);
             $('#more').text('More +');
             $('#more').removeClass('minus');
@@ -144,103 +217,83 @@ $(document).ready(function(){
 
         // Hides form / Shows Add Word
         $('#newWordForm').hide(50);
-        $('#addWord').show(50);
 
-
-        // Checks to make sure there is at least 1 word in allWords before checking whether there is a duplication
-        if (allWords.length < 1){ // If this is the first word in your library it doesn't check whether it is a duplicate
+        // If this is the first word in your library it doesn't check whether it is a duplicate
+        if (allWords.length < 1){           
             createWord();
-        } else if (allWords.length >= 1){ // If there is at least 1 word in the library see if it is a duplicate
-            createWord();
-
-            /*
-            // Check whether word exists
+        } else if (allWords.length >= 1){   // If at least 1 word in library see if it is a duplicate
+            // Checks whether word exists
             var wordCheck = $('#word').val();
             for(var i = 0, x = (allWords.length - 1); i<=x  ; i++){
-                console.log('For Loop rotation #' + i + '/' + x);
-                if(wordCheck === allWords[i].word){
-                    clear();
-                    alert(wordCheck + ' already exists in your list.');
-                    break;
-                } else if ( (wordCheck !== allWords[i].word) && (i == x) ) {
-                    createWord();
+                if(wordCheck === allWords[i].word){                     // If the word already exists
+                    clear();                                            // Clear the forms
+                    alert(wordCheck + ' already exists in your list.'); // Alert the user
+                    return;
+                } else if ( (wordCheck !== allWords[i].word) && (i == x) ) {    // If the word doesn't exist
+                    createWord();                                               // Create the word
                 }
             }
-            */
         }
 
+        // createWord grabs all values from forms, creates a word object, then stores in allWords array
         function createWord() {
-            console.log('createWord function ran');
-
             // Declaring var's out of forms
             var word = $('#word').val(),
                 def = $('#def').val(),
                 example = $('#example').val(),
                 syntax = $('#syntax').val(),
                 tag = $('#tags').val(),
-                views = 0;
+                views = 1,
+                date = new Date();
 
+            // Clears out all of the forms
             clear();
 
             // Sends word through object constructor: newWord
-            var wordRelay = new newWord(word, def, example, syntax, tag, views);
+            var wordRelay = new newWord(word, def, example, syntax, tag, views, date);
 
             // Adds our newWord to our allWords array
             allWords.unshift(wordRelay);
 
-            /*
-            var items = [
-              { name: 'Edward', value: 21 },
-              { name: 'Sharpe', value: 37 },
-              { name: 'And', value: 45 },
-              { name: 'The', value: -12 },
-              { name: 'Magnetic' },
-              { name: 'Zeros', value: 37 }
-            ];
-            items.sort(function (a, b) {
-              if (a.value > b.value) {
-                return 1;
-              }
-              if (a.value < b.value) {
-                return -1;
-              }
-              // a must be equal to b
-              return 0;
-            });
-            */
-
             completeList();
 
+            // Create a filter check to keep the words in order according the current selected filter
+            if ( $('#filterAlphabet').hasClass('btn-primary') ){
+                var list = allWords;
+                filter( list, 'word' );
+            } else if ( $('#filterViews').hasClass('btn-primary') ){
+                var list = allWords;
+                filter( list, 'views' );
+            } else if ( $('#filterDate').hasClass('btn-primary') ){
+                var list = allWords;
+                filter( list, 'date' ); 
+            }
+
             createDOM();
-
-            console.log(allWords);
-            //console.log('Entire allWords array: ' + allWords);
-            console.log('last word submitted - allWords[0] = ' + allWords[0].word);
-            console.log('allWords length = ' + allWords.length);
-            console.log('-------------------break------------------');
+            counterUpdate();
         }
-    });
-    // ^^ END SUBMIT BUTTON
+    }); // ^ END SUBMIT BUTTON
 
+    // CreateDOM loops through allWords array and places each word on the DOM
     function createDOM(){
-        console.log('createDom function ran')
+        // This should be in Angular.js
 
         // Clears previous DOM
         if (allWords.length >= 1){ 
+            $('.posts').empty();
+        // If the last word is deleted, this clears the last word
+        } else if ( allWords.length < 1){
             $('.posts').empty();
         }
 
         // Loops through allWords and places each word in DOM
         for(var i = 0, x = allWords.length; i<x; i++){
-            // **** This needs to create a new DOM object, consider implementing Angular! *****
             // Create a div with the id = the word. also has section for def.
-            //$('.posts').prepend('<div class="panel panel-default" id="' + allWords[0].word + 'Div"><div class="panel-heading"><h3 class="panel-title" id="' + allWords[0].word + 'Title"></h3></div><div class="panel-body" id="' + allWords[0].word + 'Def' + '"></div></div>');
-            $('.posts').prepend('<div class="panel panel-default"><div class="panel-heading" role="tab" id="headingOne"><h4 class="panel-title"><a role="collapsed" data-toggle="collapse" data-parent="#accordion" href="#' + allWords[i].word + '" aria-expanded="false" aria-controls="' + allWords[i].word + '" id="' + allWords[i].word + 'Title" onclick="addView(' + allWords[i].view + ',' + allWords[i].word + ');"><!-- New Word --></a></h4></div><div id="' + allWords[i].word + '" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne"><div class="panel-body" id="' + allWords[i].word + 'Def"></div></div>');
+            $('.posts').prepend('<div class="panel panel-default"><div class="panel-heading" role="tab" id="headingOne"><h4 class="panel-title"><a role="collapsed" data-toggle="collapse" data-parent="#accordion" href="#' + allWords[i].word + 'Toggle" aria-expanded="false" aria-controls="' + allWords[i].word + '" id="' + allWords[i].word + '" class="addView"><h4>'+ allWords[i].word + '</h4></a></div><div id="' + allWords[i].word + 'Toggle" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne"><div class="panel-body" id="' + allWords[i].word + 'Def"></div></div>');
 
             // Delete Button DOM Placement
-            //$('#' + def).prepend('<span class="label label-danger pull-right" id="' + word + 'Delete" onclick="deleteWord();">Delete</span>');
             var deleteIndex = i;
-            $('#' + allWords[i].word + 'Def').prepend('<button type="button" class="btn btn-primary btn-xs pull-right deleteWord" id="' + deleteIndex + '">Delete</button>');
+            $('#' + allWords[i].word + 'Def').prepend('<button type="button" class="btn btn-primary btn-xs pull-right deleteWord" id="' + i + '">Delete</button>');
 
             // Views DOM Placement
             $('#' + allWords[i].word + 'Def').prepend('<h6 style="opacity: .5;" class="pull-left">Views <span class="badge" id="' + allWords[i].word + 'Views"></span></h6>');
@@ -258,96 +311,10 @@ $(document).ready(function(){
                 $('<samp>').text(allWords[i].syntax).prependTo('#' + allWords[i].word + 'Syntax');
                 $('<small>').text('SYNTAX').prependTo('#' + allWords[i].word + 'Def');
             }
-            
-            // Word DOM placement
-            $('<h4>').text(allWords[i].word).prependTo('#' + allWords[i].word + 'Title');
-            console.log('word = ' + allWords[i].word);
 
             // Def DOM placement
             $('<p>').text(allWords[i].def).prependTo('#' + allWords[i].word + 'Def');
-            console.log('def = ' + allWords[i].def);
-            
-            // This should be in Angular.JS
-            /*
-            function createDOM(this){
-                $('<a>').text(word.wordToo).prependTo('#newWord');
-                // Here I want to create and place the words data into HTML
-                // Then, I will send that through my alphabetization function 
-            }
-            */
-
-            // STATS SECTION
-            $('#word_count').text(allWords.length); // If there is a word there is a def. There are absolutes.
-            $('#def_count').text(allWords.length);
-
-            // Syntax Counter. Because not every word will have a syntax.
-            if(allWords[i].syntax){
-              synTotal++;
-              $('#syn_count').text(synTotal);
-            }
-
-            // Example Counter.
-            if(allWords[i].example){
-              exampleTotal++;
-              $('#ex_count').text(exampleTotal);
-            }
-            
-            // Tag Counter.
-            if(allWords[i].tag){
-              tagTotal++;
-              $('#tag_count').text(tagTotal);
-            }
         }
     }
 
-    //if( ($(this).clicked()) == )
-
-    //$(this).
-    /*
-    $(this).click(function(){
-        var thisID = $(this).attr('id');
-
-        console.log('thisID = ' + thisID);
-        for(var i = 0, x = allWords.length; i<x; i++){
-            if( thisID == ( allWords[i] )){
-                console.log('this click worked!');
-                console.log('thisID = ' + thisID + ' && allWord[i] = ' + allWords[i].word + 'Title');
-            }
-
-        }
-    });
-    */
-
-    $('.deleteWord').click(function(){
-        alert('delete');
-    });
-
-    $('.sort').click(function(){
-        sortAlpha();
-    });
-
-    //$('.collapsed').click(function(){
-    //    console.log('fTitle was clicked');
-    //});
-    //a=$('[myc="blue"][myid="1"][myid="3"]');
-
-    function addView(a, b){
-        this.a = a++;
-        this.b = allWords[i].word;
-        $('#' + b + 'Views').text(this);
-        console.log('addView ran');
-    }
-
-    function sortAlpha(){
-        allWords.sort(function(a, b) {
-            return parseFloat(a.word) - parseFloat(b.word);
-        });
-        completeList();
-    }
-
-    function sortViews(){
-        allWords.sort(function(a, b) {
-            return parseFloat(a.views) - parseFloat(b.views);
-        });
-    }
 });
